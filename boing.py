@@ -74,18 +74,45 @@ class Game:
         pass
 
 
+class State(Enum):
+    """
+    Defines the state of the game. Our game can only have three states perse
+
+    Menu -> This is when the game starts and we are selecting players
+    Play -> This is when we are actually playing the game
+    Game Over -> Clearly the state when the game is over.
+    """
+
+    MENU = 1
+    PLAY = 2
+    GAME_OVER = 3
+
+
 def update():
     print("Veer updating...")
 
 
 def draw():
+    """
+    Pygame Zero runs this method 60 times per second to 'redraw' the game
+    image on the screen. Just like screen painting.
+
+    We need not call this method manually as it's already done for us.
+
+    The logic for draw will depend on what 'state' of the game we are in
+    and we basically call the `game.draw()` method as the game object
+    itself knows how to draw itself on screen.
+    """
+    # TODO: put this game.draw() in a conditional state == State.PLAY
     game.draw()
 
+    if state == State.MENU:
+        menu_image = "menu" + str(NUM_PLAYERS - 1)
+        print(f"Veer menu_image: {menu_image}")
+        screen.blit(menu_image, (0, 0))
 
-class State(Enum):
-    MENU = 1
-    PLAY = 2
-    GAME_OVER = 3
+    elif state == State.GAME_OVER:
+        screen.blit("over", (0, 0))
 
 
 # Try to play the theme music when the game starts. Incase an error occurs
@@ -101,7 +128,7 @@ except Exception:
     pass
 
 # Set the initial game state
-state = State.MENU
+state = State.GAME_OVER
 
 # Initially create a new game without any players
 game = Game()
