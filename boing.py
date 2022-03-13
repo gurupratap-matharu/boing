@@ -8,12 +8,13 @@ import pygame
 
 if sys.version_info < (3, 5):
     print(
-        "This game requires at least version 3. 5 of Python. Please download"
+        "This game requires atleast version 3.5 of Python. Please download"
         "it from www.python.org"
     )
     sys.exit()
 
 pgzero_version = [int(s) for s in pgzero.__version__.split(".")]
+
 if pgzero_version < [1, 2]:
     print(
         "This game requires at least version 1.2 of PyGame Zero. You are"
@@ -22,16 +23,18 @@ if pgzero_version < [1, 2]:
     )
     sys.exit()
 
+TITLE = "Boing!"
+
 WIDTH = 800
 HEIGHT = 480
-TITLE = "Boing!"
 
 HALF_WIDTH = WIDTH // 2
 HALF_HEIGHT = HEIGHT // 2
+
+NUM_PLAYERS = 1
 PLAYER_SPEED = 6
 MAX_AI_SPEED = 6
 
-NUM_PLAYERS = 1
 SPACE_DOWN = False
 
 
@@ -112,7 +115,7 @@ class Bat(Actor):
         frame = 0
 
         if self.timer > 0:
-            frame = 2 if game.ball.out() else 1
+            frame = 2 if game.ball.is_out() else 1
 
         self.image = "bat" + str(self.player) + str(frame)
 
@@ -197,7 +200,7 @@ class Game:
 
         # Update scores if the ball has gone off the left or right edge of the screen.
 
-        if self.ball.out():
+        if self.ball.is_out():
             scoring_player = 1 if self.ball.x < HALF_WIDTH else 0
             losing_player = 1 - scoring_player
 
@@ -263,6 +266,44 @@ class Game:
         except Exception as e:
             pass
 
+    def has_anyone_won(self) -> bool:
+        """
+        Finds out if any player has won the game.
+        """
+
+        return max(self.bats[0].score, self.bats[1].score) > 9
+
+
+def p1_controls():
+    """
+    Tracks player 1 key press events
+    """
+
+    move = 0
+
+    if keyboard.z or keyboard.down:
+        move = PLAYER_SPEED
+
+    elif keyboard.a or keyboard.up:
+        move = -PLAYER_SPEED
+
+    return move
+
+
+def p2_controls():
+    """
+    Tracks player 2 key press events
+    """
+
+    move = 0
+
+    if keyboard.m:
+        move = PLAYER_SPEED
+
+    elif keyboard.k:
+        move = -PLAYER_SPEED
+    return move
+
 
 class State(Enum):
     """
@@ -293,7 +334,7 @@ def update():
 
     global NUM_PLAYERS, SPACE_DOWN, state, game
 
-    # Check whether space key has just been pressed ans wasn't pressed in the previous frame
+    # Check whether space key has just been pressed and wasn't pressed in the previous frame
     space_pressed = False
 
     if keyboard.space and not SPACE_DOWN:
@@ -303,21 +344,37 @@ def update():
 
     if state == State.MENU:
 
-        if NUM_PLAYERS == 1 and keyboard.down:
-            game.play_sound("down", menu_sound=True)
-            NUM_PLAYERS = 2
+        if space_pressed:
+            # Player want to start the game
+            state = State.PLAY
 
-        elif NUM_PLAYERS == 2 and keyboard.up:
-            game.play_sound("up", menu_sound=True)
-            NUM_PLAYERS = 1
+            # Is it a 2 player game?
+            p1_ctrl = p1_controls
+            p2_ctrl = p2_controls if NUM_PLAYERS == 2 else None
+
+            # start the game
+            game = Game(controls=(p1_ctrl, p2_ctrl))
+
+        else:
+
+            if NUM_PLAYERS == 1 and keyboard.down:
+                game.play_sound("down", menu_sound=True)
+                NUM_PLAYERS = 2
+
+            elif NUM_PLAYERS == 2 and keyboard.up:
+                game.play_sound("up", menu_sound=True)
+                NUM_PLAYERS = 1
 
     elif state == State.PLAY:
+
         if game.has_anyone_won():
             state = State.GAME_OVER
+
         else:
             game.update()
 
     elif state == State.GAME_OVER:
+
         if space_pressed:
             # Players wish to play again so start a new game
             state = State.MENU
@@ -338,6 +395,7 @@ def draw():
     and we basically call the `game.draw()` method as the game object
     itself knows how to draw itself on screen.
     """
+
     # TODO: put this game.draw() in a conditional state == State.PLAY
     game.draw()
 
